@@ -1,5 +1,30 @@
 # Encrypted Arch on Btrfs subvolumes incl. /boot
 
+- [Encrypted Arch on Btrfs subvolumes incl. /boot](#encrypted-arch-on-btrfs-subvolumes-incl-boot)
+  - [Create Partitions](#create-partitions)
+    - [Create /boot Filesystem](#create-boot-filesystem)
+    - [Create /boot/efi Filesystem](#create-bootefi-filesystem)
+    - [Create / Filesystem](#create--filesystem)
+  - [Create Subvolumes](#create-subvolumes)
+    - [Mount root partition](#mount-root-partition)
+    - [Create subvolumes](#create-subvolumes-1)
+    - [Mount @ subvolume as root partition](#mount--subvolume-as-root-partition)
+    - [Mount @home subvolume](#mount-home-subvolume)
+    - [Mount @snapshots subvolume](#mount-snapshots-subvolume)
+  - [Mount remaining partitions](#mount-remaining-partitions)
+    - [/boot](#boot)
+    - [/boot/efi](#bootefi)
+  - [Install Arch](#install-arch)
+    - [Install required packages](#install-required-packages)
+    - [Generate fstab](#generate-fstab)
+    - [Chroot into new system](#chroot-into-new-system)
+    - [Generate Keyfile for automatic unlocking](#generate-keyfile-for-automatic-unlocking)
+    - [Add crypttab](#add-crypttab)
+    - [Add mkinitcpio config](#add-mkinitcpio-config)
+    - [Add GRUB config](#add-grub-config)
+
+---
+
 ## Create Partitions
 
 ```sh
@@ -8,8 +33,8 @@ gdisk /dev/sda
 
 | Path      | Size      | Type | Format |
 | --------- | --------- | ---- | ------ |
-| /boot     | 200M      | 8309 | luks1  |
-| /boot/efi | 550M      | EF00 | Fat32  |
+| /boot     | 550M      | 8309 | luks1  |
+| /boot/efi | 200M      | EF00 | Fat32  |
 | /         | remaining | 8309 | luks2  |
 
 ### Create /boot Filesystem
@@ -53,13 +78,12 @@ mkfs.btrfs /dev/mapper/cryptroot
 | @          | /           |
 | @home      | /home       |
 | @snapshots | /.snapshots |
-<br>
 
 ### Mount root partition
 
 ```sh
 mount /dev/mapper/cryptroot /mnt
-````
+```
 
 ### Create subvolumes
 
@@ -114,7 +138,7 @@ mkdir /mnt/boot
 ```
 
 ```sh
-mount /dev/mapper/cryptroot /mnt/boot
+mount /dev/mapper/cryptboot /mnt/boot
 ```
 
 ### /boot/efi
@@ -161,6 +185,12 @@ chmod 600 /boot/initramfs-linux*
 ```sh
 cryptsetup luksAddkey /dev/sda1 /crypto_keyfile.bin
 cryptsetup luksAddKey /dev/sda3 /crypto_keyfile.bin
+```
+
+### Add crypttab
+
+```sh
+cryptboot /dev/sda1 /crypto_keyfile.bin luks
 ```
 
 ### Add mkinitcpio config
